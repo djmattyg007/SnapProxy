@@ -32,8 +32,9 @@ class JSONrpcHandler(BaseHandler):
         self.done = False
         while (not self.done):
             _response = self.snapcast_connector.listen()
-            if (_response):
-                print(_response)
-                if 'id' in _response.decode() and json.loads(_response.decode())['id'] == self.request_id:
-                    self.response = _response
-                    self.done = True
+            if (not _response):
+                break
+
+            if 'id' in _response.decode() and json.loads(_response.decode())['id'] == self.request_id:
+                self.response = _response
+                self.done = True

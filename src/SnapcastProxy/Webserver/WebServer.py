@@ -26,7 +26,7 @@ class WebServer(threading.Thread):
         self.exit = False
         self.eventmanager = eventmanager
         #self.snapcast_connector = snapcast_connector
-        self.www_folder = '/var/www'
+        self.www_folder = '/home/pi/hydraplay'
         self._logger = logging.getLogger(__name__)
         self.websocket_handlers = set()
 
@@ -37,23 +37,14 @@ class WebServer(threading.Thread):
             (r"/(.*)", StaticFileHandler, {"path": self.www_folder, "default_filename": "index.html"})
         ])
 
-    #@tornado.gen.coroutine
-    async def auto_loop(self):
-        while True:
-           if len(self.websocket_handlers) > 0:
-                for handler in self.websocket_handlers:
-                    handler.check_for_telnet_input()
-           await gen.sleep(0.05)
 
     def run(self):
         self._logger.info("Starting Webserver")
         asyncio.set_event_loop(asyncio.new_event_loop())
 
-        tornado.ioloop.IOLoop.current().spawn_callback(self.auto_loop)
         webserver = self.routes()
         webserver.listen(8080)
         tornado.ioloop.IOLoop.current().start()
-
 
 
     def kill(self):

@@ -4,9 +4,6 @@ import json
 import sys
 import logging
 import traceback
-
-
-from SnapcastProxy.EventManager.Events import Events
 from SnapcastProxy.SnapcastConnector.Telnet import SnapTelnet
 
 class WebSocketHandler(websocket.WebSocketHandler):
@@ -15,15 +12,21 @@ class WebSocketHandler(websocket.WebSocketHandler):
 
         self.eventManager = kwargs.pop('eventmanager')
         self.handlers = kwargs.pop('wshandlers')
-        #self.eventManager.subscribe(Events.ON_BROADCAST, self.on_socket_broadcast)
         self.socket_open = False
         self._logger = logging.getLogger(__name__)
         self.snapcast_connector = None
+        self.finish_listener = False
         super(WebSocketHandler, self).__init__(*args, **kwargs)
 
 
     def check_origin(self, origin):
         return True
+
+
+    def telnet_listen(self):
+        response = self.snapcast_connector.listen()
+        if response:
+            self.write_message(response)
 
     def open(self):
         """
@@ -34,9 +37,12 @@ class WebSocketHandler(websocket.WebSocketHandler):
         self.socket_open = True
         self.handlers.add(self)
         self._logger.info("New client connected")
-        #self.eventManager.publish(Events.ON_CLIENT_CONNECTED, message)
         self.snapcast_connector = SnapTelnet(self.eventManager)
+        self.pCallback = tornado.ioloop.PeriodicCallback(self.telnet_listen, callback_time=10)
+        self.pCallback.start()
 
+    def close_callback(self):
+        pass
 
     def on_message(self, message):
         """
@@ -54,9 +60,9 @@ class WebSocketHandler(websocket.WebSocketHandler):
         """
         is called when a connection is closed. all connection based things should be cleanded here
         """
+        self.finish_listener = True
         self.socket_open = False
-        #self.eventManager.unsubscribe(Events.ON_BROADCAST, self.on_socket_broadcast)
-        #self.eventManager.unsubscribe(Events.ON_SOCKET_SEND, self.on_socket_send)
+        self.pCallback.stop()
         self.snapcast_connector.close()
         self.handlers.discard(self)
         self._logger.info("Client disconnected")
@@ -77,9 +83,3 @@ class WebSocketHandler(websocket.WebSocketHandler):
             del message['data']['client']
             self.write_message(message)
 
-
-    def check_for_telnet_input(self):
-        response = self.snapcast_connector.listen()
-        if response:
-            self._logger.debug('Websocket Broadcast: ' + str(response.strip().decode('utf8')))
-            self.write_message(response)
