@@ -1,4 +1,4 @@
-!! It was formerly used as proxy for HydraPlay. Scince HydraPlay is compatible with websockify, this project is not maintained anymore. I will leave it here as code sample. !!
+ :exclamation: :boom: It was formerly used as proxy for HydraPlay. Scince HydraPlay is compatible with websockify, this project is not maintained anymore. I will leave it here as code sample.  :boom: :exclamation:
 
 # Snapcast Websocket and HTTP Proxy
 
